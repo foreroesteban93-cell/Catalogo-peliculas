@@ -2,7 +2,6 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { obtenerDetalles } from "../services/api";
 import Detalle from "../components/Detalle";
-import { guardarFavorito } from "../utils/localStorage";
 
 function DetallePage() {
   const { id } = useParams();
@@ -19,12 +18,19 @@ function DetallePage() {
   return (
     <div>
       <Detalle
-        pelicula={pelicula}
-        onFavorito={(p) => {
-          guardarFavorito(p);
-          alert("Guardado en favoritos");
-        }}
-      />
+      pelicula={pelicula}
+      onFavorito={async (p) => {
+        await fetch("http://localhost:3000/favoritos", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(p),
+        });
+
+        alert("Guardado en favoritos");
+      }}
+    />
     </div>
   );
 }

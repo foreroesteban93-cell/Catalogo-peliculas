@@ -1,37 +1,59 @@
 import { useEffect, useState } from "react";
-import { obtenerFavoritos, eliminarFavorito } from "../utils/localStorage";
 import PeliculasLista from "../components/PeliculasLista";
-import { useNavigate, useLocation } from "react-router-dom";
 
 function Favoritos() {
-  const [favoritos, setFavoritos] = useState([]);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [peliculas, setPeliculas] = useState([]);
 
-  useEffect(() => {
-    const data = obtenerFavoritos();
-    console.log("FAVORITOS CARGADOS:", data); // debug
-    setFavoritos(data);
-  }, [location]);
+  // 🔹 Cargar favoritos desde el backend
+  const cargarFavoritos = async () => {
+    try {
+      const res = await fetch("http://localhost:3000/favoritos");
+      const data = await res.json();
 
-  const handleDelete = (id) => {
-    eliminarFavorito(id);
-    setFavoritos(favoritos.filter(f => f.imdbID !== id));
+      // adaptamos los datos al formato que ya usa tu app
+      const adaptadas = data.map((p) => ({
+        imdbID: p.imdbID,
+        Title: p.titulo,
+        Poster: p.poster,
+        Year: p.anio,
+      }));
+
+      setPeliculas(adaptadas);
+    } catch (error) {
+      console.error("Error cargando favoritos:", error);
+    }
   };
+
+  // 🔹 Eliminar favorito
+  const eliminarFavorito = async (id) => {
+    try {
+      await fetch(`http://localhost:3000/favoritos/${id}`, {
+        method: "DELETE",
+      });
+
+      // recargar lista después de eliminar
+      cargarFavoritos();
+    } catch (error) {
+      console.error("Error eliminando:", error);
+    }
+  };
+
+  // 🔹 useEffect (cuando carga la página)
+  useEffect(() => {
+    cargarFavoritos();
+  }, []);
 
   return (
     <div>
       <h2>Favoritos</h2>
 
-      {favoritos.length === 0 ? (
-        <p style={{ marginLeft: "20px" }}>
-          No hay películas en favoritos 😢
-        </p>
+      {peliculas.length === 0 ? (
+        <p>No hay favoritos guardados</p>
       ) : (
         <PeliculasLista
-          peliculas={favoritos}
-          onSelect={(id) => navigate(`/detalle/${id}`)}
-          onDelete={handleDelete}
+          peliculas={peliculas}
+          onSelect={(id) => window.location.href = `/detalle/${id}`}
+          onDelete={eliminarFavorito}
         />
       )}
     </div>
